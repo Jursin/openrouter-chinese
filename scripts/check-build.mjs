@@ -43,10 +43,18 @@ assert.match(denied.stderr, /dictionary:bump/, "词典变化未迭代版本时�
 run("scripts/bump-dictionary.mjs");
 const bumped = JSON.parse(await readFile(configPath, "utf8"));
 assert.equal(bumped.dictionaryRevision, before.dictionaryRevision + 1);
-const [major, minor, patch] = before.legacyVersion.split(".").map(Number);
-assert.equal(bumped.legacyVersion, `${major}.${minor}.${patch + 1}`);
 assert.notEqual(bumped.dictionarySha256, before.dictionarySha256);
 run("scripts/build.mjs");
+const outputs2 = await Promise.all(outputs.map(file => readFile(path.join(fixture, file), "utf8")));
+const legacyCode = outputs2[2];
+const legacyVersion = legacyCode.match(/^\/\/ @version\s+(\S+)$/m)?.[1];
+const revisionText = String(bumped.dictionaryRevision);
+assert.equal(legacyVersion, revisionText.slice(2, 4) + "." + revisionText.slice(4, 6) + "." + revisionText.slice(6, 8),
+  "本地版版本号必须是词典日期");
+const onlineCode = outputs2[0];
+assert.doesNotMatch(onlineCode, /"Skip to content": "跳到内容"/, "在线版不得内置完整词典");
+const legacyHasDict = outputs2[2].includes("\"Skip to content\": \"跳到内容\"");
+assert.equal(legacyHasDict, true, "本地版必须内置完整词典");
 const envelope = JSON.parse(await readFile(path.join(fixture, "locales/zh-CN.online.json"), "utf8"));
 assert.equal(envelope.revision, bumped.dictionaryRevision);
 assert.equal(envelope.entries, Object.keys(dictionary).length);
@@ -55,5 +63,5 @@ run("scripts/check.mjs");
 run("scripts/check-remote.mjs");
 run("scripts/bump-dictionary.mjs");
 assert.deepEqual(JSON.parse(await readFile(configPath, "utf8")), bumped, "相同内容重复 bump 不得增加版本");
-console.log("构建回归通过：重复构建一致、未迭代阻断、词典 revision 与本地版本联动、迭代后全部测试仍通过。");
+console.log("构建回归通过：重复构建一致、未迭代阻断、词典 revision 与本地日期版本联动、在线版外置词典、迭代后全部测试仍通过。");
 console.log("隔离构建夹具保留于：" + fixture);
