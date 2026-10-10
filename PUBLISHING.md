@@ -10,10 +10,10 @@
 | --- | --- |
 | `package.json.version` | `1.0.0`，默认正式版与旧在线兼容入口的脚本版本 |
 | `release.config.json.dictionaryRevision` | `2026101001` |
-| `release.config.json.legacyVersion` | `0.1.11`，纯本地备用版独立版本 |
+| `release.config.json.legacyVersion` | `0.1.12`，纯本地备用版独立版本 |
 | `release.config.json.dictionarySha256` | 与当前源词典内容一致的 SHA-256 指纹，由显式词典迭代命令维护 |
-| `locales/zh-CN.json` | 唯一源词典，plain object，完整 1731 条 |
-| `locales/zh-CN.online.json` | `{schemaVersion: 1, revision, entries, dictionary}`，本次 `entries` 为 `1731` |
+| `locales/zh-CN.json` | 唯一源词典，plain object，完整 1957 条 |
+| `locales/zh-CN.online.json` | `{schemaVersion: 1, revision, entries, dictionary}`，本次 `entries` 为 `1957` |
 | 发布标签 | `v1.0.0` |
 
 词典每次变化都必须显式运行 `npm run dictionary:bump`，递增 `dictionaryRevision`、递增 `legacyVersion` 的补丁版本并更新 `dictionarySha256`；正式脚本版本按功能／引擎变更显式维护。构建应校验指纹、revision 与词典快照一致，**`build` 不得自动修改版本或 revision 来“修好”不一致**。
@@ -25,9 +25,9 @@
 - [ ] 构建从同一引擎与词典生成以下四个产物，没有手工修改生成文件：
   - `dist/openrouter-chinese.user.js`：默认正式版，`1.0.0`。
   - `dist/openrouter-chinese-remote.user.js`：旧在线安装链兼容入口，`1.0.0`，显示名仍无后缀。
-  - `legacy/openrouter-chinese.user.js`：当前纯本地备用版，`0.1.11`，`@grant none`。
+  - `legacy/openrouter-chinese.user.js`：当前纯本地备用版，`0.1.12`，`@grant none`。
   - `locales/zh-CN.online.json`：本次完整在线发布快照。
-- [ ] 默认版、兼容入口和备用版都内置本次完整 1731 条词典；纯本地备用版不在翻译运行时请求在线词典，也不提供在线更新管理菜单。
+- [ ] 默认版、兼容入口和备用版都内置本次完整 1957 条词典；纯本地备用版不在翻译运行时请求在线词典，也不提供在线更新管理菜单。
 - [ ] 兼容入口保持旧在线版 namespace 和缓存身份；备用版保持原本地版的显示名与 namespace。不承诺不同 namespace 自动共享缓存。
 - [ ] 主版 `@updateURL`／`@downloadURL` 保留 `main/dist/openrouter-chinese.user.js`；未合入 `main` 前不把该地址宣传成本次正式版安装入口。
 - [ ] 原本地版 `0.1.10` 和旧在线 `beta.5` 在 `legacy/archive/src/`、`legacy/archive/dist/` 冻结保留；旧预览说明与旧浏览器工具分别归入 `archive/docs/`、`archive/scripts/`。这些不是继续维护的备用安装入口，本轮不删除历史档。
@@ -53,7 +53,7 @@ npm test
 
 ### 内置兜底与完整离线首装
 
-- [ ] 先取得安装文件，再在**没有词典缓存**的安装状态下阻断全部在线词典源，确认首次运行无需下载 JSON，也能使用完整内置 1731 条词典。
+- [ ] 先取得安装文件，再在**没有词典缓存**的安装状态下阻断全部在线词典源，确认首次运行无需下载 JSON，也能使用完整内置 1957 条词典。
 - [ ] 对首页、工作区、模型／排行榜、设置等代表性页面，以及菜单、浮层、模态框和动态渲染内容检查翻译；在线词典失败不影响重翻译。
 - [ ] 纯本地备用版也使用相同完整快照，运行时没有在线词典请求。
 - [ ] 模型 ID、URL、邮箱、API Key 等敏感或标识内容未被误改，账号真实数据没有变更。

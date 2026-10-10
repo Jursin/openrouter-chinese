@@ -1,6 +1,6 @@
 # 词典格式、更新与维护合同
 
-本文对应已发布的 **OpenRouter 中文化插件 1.0.0**。本次正式版完整词典为 **1731 条**，`dictionaryRevision = 2026101001`，纯本地备用版 `legacyVersion = 0.1.11`。
+本文对应 **OpenRouter 中文化插件**当前版本。正式版完整词典为 **1957 条**，`dictionaryRevision = 2026101002`，纯本地备用版 `legacyVersion = 0.1.12`。
 
 [返回项目说明](../README.md)｜[发布清单](../PUBLISHING.md)｜[纯本地备用版](../legacy/README.md)
 
@@ -47,7 +47,7 @@
 }
 ```
 
-上例只有两条，用于解释字段，**不是本次发布快照，也不能直接导入**；本次生成文件的 `entries` 应为 `1731`，并与实际 `dictionary` 的键数一致。使用本次 revision 却配上不同内容，会被同 revision 异内容保护拒绝。
+上例只有两条，用于解释字段，**不是本次发布快照，也不能直接导入**；本次生成文件的 `entries` 应与实际 `dictionary` 的键数一致（当前 `1957`）。使用本次 revision 却配上不同内容，会被同 revision 异内容保护拒绝。
 
 | 字段 | 含义 |
 | --- | --- |
@@ -66,7 +66,7 @@ JSON 必须作为数据解析与校验，不使用 `eval` 或其他执行方式�
 | --- | --- | --- |
 | `package.json.version` | `1.0.0` | 默认正式脚本与兼容入口的功能／引擎版本 |
 | `release.config.json.dictionaryRevision` | `2026101001` | 词典快照及在线更新的新旧比较 |
-| `release.config.json.legacyVersion` | `0.1.11` | 纯本地备用脚本独立升级版本 |
+| `release.config.json.legacyVersion` | `0.1.12` | 纯本地备用脚本独立升级版本 |
 
 `revision` 是显式维护、单调增加的内容版本，不是运行时自动生成的日期。**每次词典修改都要增加 revision 并递增 legacyVersion**，即使正式脚本只更新词典而没有新的引擎功能，也不能省略这两项。
 
@@ -144,7 +144,7 @@ JSON 必须作为数据解析与校验，不使用 `eval` 或其他执行方式�
 
 1. 确认待补的英文原文与页面位置，避免将动态账号值、敏感信息或标识符当成词条。
 2. 只在 `locales/zh-CN.json` 增补或修正词条，保持 plain object；需要运行时行为变更时才修改唯一引擎模板。
-3. 词典实际变化后，显式运行 `npm run dictionary:bump`，提高 `dictionaryRevision`、递增 `legacyVersion` 的补丁版本并更新 `dictionarySha256`。本次基线为 `2026101001`／`0.1.11`，后续内容变化不得继续复用该 revision。
+3. 词典实际变化后，显式运行 `npm run dictionary:bump`，提高 `dictionaryRevision`、递增 `legacyVersion` 的补丁版本并更新 `dictionarySha256`。本次基线为 `2026101002`／`0.1.12`，后续内容变化不得继续复用该 revision。
 4. 按功能／引擎变更维护正式脚本版本，再运行：
 
    ```sh

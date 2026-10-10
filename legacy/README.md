@@ -7,8 +7,8 @@
 ## 当前纯本地备用版
 
 - 生成文件：`legacy/openrouter-chinese.user.js`。
-- 独立版本：`0.1.11`，对应词典 revision `2026101001`。
-- 内置与默认正式版相同的完整 1731 条词典；没有在线词典也能完成翻译。
+- 独立版本：`0.1.12`，对应词典 revision `2026101002`。
+- 内置与默认正式版相同的完整 1957 条词典；没有在线词典也能完成翻译。
 - 使用 `@grant none`，翻译运行时不请求在线词典，不提供自动更新、立即更新、状态查看或 JSON 导入等词典更新管理菜单。
 - 沿用原本地版的显示名和 namespace，保留原本地身份，不额外改名成新产品。
 
@@ -42,7 +42,7 @@ https://github.com/isdoge/openrouter-chinese/releases/download/v1.0.0/openrouter
 
 - 唯一共享引擎模板：`src/openrouter-chinese.user.js`。
 - 唯一源词典：`locales/zh-CN.json`，plain object。
-- 每次词典实际修改后，显式运行 `npm run dictionary:bump`：增加 `dictionaryRevision`、递增 `legacyVersion` 的补丁版本，并更新 `dictionarySha256`；本次备用版为 `0.1.11`。
+- 每次词典实际修改后，显式运行 `npm run dictionary:bump`：增加 `dictionaryRevision`、递增 `legacyVersion` 的补丁版本，并更新 `dictionarySha256`；本次备用版为 `0.1.12`。
 - 正式脚本版本在 `package.json.version` 维护，不应因为备用版仍用 `0.1.x` 就将主版降回旧版本号。
 - 再运行 `npm run build` 统一生成，执行 `npm test` 核对；`build` 不自动改版本／revision，词典变化但未 bump 时应报错。
 

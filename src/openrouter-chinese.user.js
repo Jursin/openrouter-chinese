@@ -39,6 +39,8 @@
     "/models",
     "/benchmarks",
     "/ori",
+    "/discover",
+    "/compare",
   ];
   const ATTRIBUTES = [
     "aria-label",
