@@ -12,7 +12,7 @@
 ｜
 [词典与更新说明](docs/DICTIONARY.md)
 
-> **v1.0.0 已正式发布并合入 `main`。** 推荐通过 [Release](https://github.com/isdoge/openrouter-chinese/releases/tag/v1.0.0) 或下方固定的 `v1.0.0` 地址安装；`main` 的脚本升级链与在线词典入口也已提供本次正式版本。
+> **v1.0.1 已发布并合入 `main`。** 推荐通过 [Release](https://github.com/isdoge/openrouter-chinese/releases/tag/v1.0.0) 或下方固定的 `v1.0.0` 地址安装；`main` 的脚本升级链与在线词典入口也已提供本次正式版本。
 
 ## 功能
 
@@ -71,6 +71,8 @@
 ### 2. 安装正式脚本
 
 本次主安装入口为已发布的 GitHub `v1.0.0` Release 资产：
+
+本次 Release 附件为 v1.0.0（1.0.0 安装入口）。**1.0.1 起正式脚本沿 `main` 更新链发布**：已安装用户通过 Tampermonkey 自动更新即可升级，新用户也可直接从 [main 安装入口](https://raw.githubusercontent.com/isdoge/openrouter-chinese/main/dist/openrouter-chinese.user.js) 安装。固定标签备用入口：
 
 [安装 OpenRouter 中文化插件 1.0.0](https://github.com/isdoge/openrouter-chinese/releases/download/v1.0.0/openrouter-chinese.user.js)
 
