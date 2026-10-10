@@ -25,8 +25,7 @@ export function validateDictionary(dictionary) {
 
 export function validateReleaseConfig(config) {
   if (!Number.isSafeInteger(config.dictionaryRevision) || config.dictionaryRevision < 1
-      || !/^\d+\.\d+\.\d+$/.test(config.legacyVersion)
       || !/^[a-f0-9]{64}$/.test(config.dictionarySha256)) {
-    throw new Error("release.config.json 的词典版本、本地版本或指纹无效");
+    throw new Error("release.config.json 的词典版本或指纹无效");
   }
 }

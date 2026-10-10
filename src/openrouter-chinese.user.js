@@ -194,13 +194,12 @@
 
   const SCRIPT_VERSION = /* build:version */ "1.0.0";
   const ONLINE_MODE = /* build:online */ true;
-  const BUILTIN_DICTIONARY_REVISION = /* build:revision */ 2026101001;
-  // 构建时注入完整快照；不要在此处维护第二份词典。
+  const DICTIONARY_REVISION = /* build:revision */ 2026101001;
+  // 本地版构建时注入完整快照；在线版为空对象，词典全部来自外置 JSON。
   const BUILTIN_DICTIONARY = /* build:dictionary */ {};
   let EXACT_TEXT = new Map(Object.entries(BUILTIN_DICTIONARY));
-  let currentRevision = BUILTIN_DICTIONARY_REVISION;
-  let dictionarySource = "builtin";
-  let autoUpdate = ONLINE_MODE;
+  let currentRevision = DICTIONARY_REVISION;
+  let dictionarySource = ONLINE_MODE ? "remote" : "builtin";
   let originalPageTitle = null;
   let translatedPageTitle = null;
 
@@ -210,7 +209,6 @@
       revision: currentRevision,
       source: dictionarySource,
       entries: EXACT_TEXT.size,
-      autoUpdate,
     };
   }
 
@@ -221,17 +219,12 @@
     "https://raw.githubusercontent.com/isdoge/openrouter-chinese/v1.0.0/locales/zh-CN.online.json",
   ];
   const DICTIONARY_CACHE_KEY = "openrouter-zh-remote-dictionary-v1";
-  const LAST_SUCCESS_KEY = "openrouter-zh-remote-last-success-v1";
-  const LAST_ATTEMPT_KEY = "openrouter-zh-remote-last-attempt-v1";
-  const AUTO_UPDATE_KEY = "openrouter-zh-auto-update-v1";
-  const DICTIONARY_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const DICTIONARY_RETRY_INTERVAL_MS = 10 * 60 * 1000;
   const DICTIONARY_MAX_BYTES = 800_000;
-  let currentSignature = dictionarySignature(Object.entries(BUILTIN_DICTIONARY));
-  let hasValidVersionedCache = false;
+  // 本地版锚定内置快照签名；在线版初始为 null，首次成功加载后锚定该词典签名。
+  let currentSignature = Object.keys(BUILTIN_DICTIONARY).length > 0
+    ? dictionarySignature(Object.entries(BUILTIN_DICTIONARY))
+    : null;
   let dictionaryRequest = null;
-  let lastSuccessAt = 0;
-  let lastAttemptAt = 0;
 
   function dictionarySignature(entries) {
     return JSON.stringify(entries.slice().sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0));
@@ -274,8 +267,11 @@
   }
 
   function canApplyDictionary(parsed) {
-    return parsed && !parsed.legacy && parsed.revision >= currentRevision
-      && (parsed.revision !== currentRevision || parsed.signature === currentSignature);
+    if (!parsed || parsed.legacy || parsed.revision < currentRevision) return false;
+    if (parsed.revision !== currentRevision) return true;
+    // 同版本签名比对：本地版以内置快照为锚；在线版以当前已加载的词典为锚，
+    // 尚无任何词典（currentSignature 为空）时远端本身就是版本依据。
+    return currentSignature === null || parsed.signature === currentSignature;
   }
 
   function applyDictionary(parsed, source) {
@@ -291,16 +287,7 @@
     try { return GM_getValue(key, fallback); } catch { return fallback; }
   }
 
-  function validTimestamp(value) {
-    const timestamp = Number(value);
-    return Number.isSafeInteger(timestamp) && timestamp > 0 && timestamp <= Date.now() ? timestamp : 0;
-  }
-
   function loadCachedDictionary() {
-    const preference = readStored(AUTO_UPDATE_KEY, true);
-    autoUpdate = typeof preference === "boolean" ? preference : true;
-    lastSuccessAt = validTimestamp(readStored(LAST_SUCCESS_KEY, 0));
-    lastAttemptAt = validTimestamp(readStored(LAST_ATTEMPT_KEY, 0));
     const saved = parseDictionary(readStored(DICTIONARY_CACHE_KEY, ""), true);
     if (!saved) return;
     if (saved.legacy) {
@@ -311,7 +298,6 @@
       dictionarySource = "legacy-cache";
     } else if (canApplyDictionary(saved)) {
       applyDictionary(saved, "cache");
-      hasValidVersionedCache = true;
     }
   }
 
@@ -338,7 +324,7 @@
   }
 
   function syncSharedDictionary(strict = false) {
-    // 提交校验不可把存储读取异常当成空缓存；启动和门槛检查仍可容错。
+    // 提交校验不可把存储读取异常当成空缓存；启动检查仍可容错。
     const raw = strict ? GM_getValue(DICTIONARY_CACHE_KEY, "") : readStored(DICTIONARY_CACHE_KEY, "");
     const shared = parseDictionary(raw);
     if (!shared || shared.legacy || shared.revision < currentRevision) return;
@@ -352,8 +338,6 @@
     }
     if (canApplyDictionary(shared)) {
       applyDictionary(shared, "cache");
-      hasValidVersionedCache = true;
-      lastSuccessAt = validTimestamp(readStored(LAST_SUCCESS_KEY, lastSuccessAt));
     }
   }
 
@@ -388,58 +372,21 @@
         error.code = "DICTIONARY_VERSION_CONFLICT";
         throw error;
       }
-      // 缓存落盘失败时不记成功时间，保留当前有效词典。
       await GM_setValue(DICTIONARY_CACHE_KEY, parsed.serialized);
       applyDictionary(parsed, source);
-      hasValidVersionedCache = true;
-      lastSuccessAt = Date.now();
-      try { await GM_setValue(LAST_SUCCESS_KEY, lastSuccessAt); } catch { /* 仍由当前页冷却 */ }
     });
   }
 
-  async function refreshDictionary(force = false) {
-    if (!force && !autoUpdate) return false;
+  async function refreshDictionary() {
     if (dictionaryRequest) return dictionaryRequest;
     syncSharedDictionary();
-    const now = Date.now();
-    if (!force && ((hasValidVersionedCache && lastSuccessAt && now - lastSuccessAt < DICTIONARY_CHECK_INTERVAL_MS)
-        || (lastAttemptAt && now - lastAttemptAt < DICTIONARY_RETRY_INTERVAL_MS))) return false;
-    lastAttemptAt = now;
     dictionaryRequest = (async () => {
       try {
-        try { await GM_setValue(LAST_ATTEMPT_KEY, now); } catch { /* 当前页仍保持重试间隔 */ }
-        await requestDictionary(force);
+        await requestDictionary(false);
         console.info("[" + SCRIPT_NAME + "] 词典同步成功：" + EXACT_TEXT.size + " 条");
         return true;
       } catch {
-        console.warn("[" + SCRIPT_NAME + "] 词典更新失败，继续使用完整本地词典");
-        return false;
-      }
-    })();
-    try { return await dictionaryRequest; } finally { dictionaryRequest = null; }
-  }
-
-  function setAutoUpdate(enabled) {
-    if (typeof enabled !== "boolean") return false;
-    autoUpdate = enabled;
-    try {
-      GM_setValue(AUTO_UPDATE_KEY, enabled);
-    } catch {
-      return false;
-    }
-    if (enabled) void refreshDictionary(false);
-    return true;
-  }
-
-  async function importDictionary(raw) {
-    if (dictionaryRequest) return false;
-    const parsed = parseDictionary(raw);
-    if (!canApplyDictionary(parsed)) return false;
-    dictionaryRequest = (async () => {
-      try {
-        await persistDictionary(parsed, "import");
-        return true;
-      } catch {
+        console.warn("[" + SCRIPT_NAME + "] 词典更新失败，继续使用当前词典");
         return false;
       }
     })();
@@ -451,31 +398,16 @@
       try { GM_registerMenuCommand(name, callback); } catch { /* 菜单不可用不影响翻译 */ }
     };
     register("立即更新中文词典", async () => {
-      const ok = await refreshDictionary(true);
-      window.alert(ok ? "中文词典已更新。" : "未能更新，已保留当前完整词典。请稍后重试或导入 JSON。");
-    });
-    register("启用词典自动更新", () => {
-      window.alert(setAutoUpdate(true) ? "已启用词典自动更新。" : "当前页已启用，但无法保存设置。");
-    });
-    register("停用词典自动更新", () => {
-      window.alert(setAutoUpdate(false) ? "已停用词典自动更新，仍可手动更新。" : "当前页已停用，但无法保存设置。");
+      const ok = await refreshDictionary();
+      window.alert(ok ? "中文词典已更新。" : "未能更新，已保留当前词典。请稍后重试。");
+      return ok;
     });
     register("查看词典状态", () => {
       const status = getDictionaryStatus();
-      const sources = { builtin: "内置快照", cache: "本地缓存", "legacy-cache": "内置快照＋旧缓存额外条目", remote: "在线更新", import: "手动导入" };
+      const sources = { builtin: "内置快照", cache: "本地缓存", "legacy-cache": "内置快照＋旧缓存额外条目", remote: "在线更新" };
       window.alert("脚本版本：" + status.version + "\n词典版本：" + status.revision
-        + "\n来源：" + sources[status.source] + "\n有效条目：" + status.entries
-        + "\n自动更新：" + (status.autoUpdate ? "启用" : "停用"));
+        + "\n来源：" + sources[status.source] + "\n有效条目：" + status.entries);
     });
-    register("导入 JSON", async () => {
-      const raw = window.prompt("请粘贴 zh-CN.online.json 内容（需包含 revision 的版本化词典）。");
-      if (raw === null) return;
-      const ok = await importDictionary(raw);
-      window.alert(ok ? "词典已导入并保存。" : "导入失败：格式无效、版本过旧、同版本内容冲突、更新正在进行或缓存不可写。已保留当前词典。");
-    });
-    void refreshDictionary(false);
-    // 每 10 分钟检查门槛，不代表每 10 分钟下载；成功后仍冷却 24 小时。
-    setInterval(() => { if (autoUpdate) void refreshDictionary(false); }, DICTIONARY_RETRY_INTERVAL_MS);
   }
   // build:online:end
 
@@ -817,11 +749,11 @@
     loadCachedDictionary();
     observeRouteChanges();
     const api = {
-      run, translate, refreshDictionary, getDictionaryStatus,
-      importDictionary, setAutoUpdate, version: SCRIPT_VERSION,
+      run, translate, refreshDictionary, getDictionaryStatus, version: SCRIPT_VERSION,
     };
     window.__openrouterChinese = api;
     window.__openrouterChineseRemote = api;
+    if (ONLINE_MODE) void refreshDictionary();
     setupDictionaryUpdates();
     console.info("[" + SCRIPT_NAME + "] OpenRouter 中文化插件已启动");
     const delayStart = () => setTimeout(startTranslation, INITIAL_RUN_DELAY_MS);

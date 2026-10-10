@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         OpenRouter 中文化插件
 // @namespace    https://github.com/isdoge/openrouter-chinese
-// @version      0.1.12
-// @description  中文化 OpenRouter 界面，本地备用版内置完整词典，不联网获取词典
+// @version      26.10.10
+// @description  中文化 OpenRouter 界面，本地版内置完整词典，不联网获取词典
 // @author       狗带带子
 // @icon         https://ts2.tc.mm.bing.net/th/id/ODF.l3ZEv6Gwma3We2rLiXcGSw?w=32&h=32&qlt=90&pcl=fffffa&o=6&pid=1.2
 // @license      MIT
@@ -187,10 +187,10 @@
   ];
 
 
-  const SCRIPT_VERSION = "0.1.12";
+  const SCRIPT_VERSION = "26.10.10";
   const ONLINE_MODE = false;
-  const BUILTIN_DICTIONARY_REVISION = 2026101002;
-  // 构建时注入完整快照；不要在此处维护第二份词典。
+  const DICTIONARY_REVISION = 2026101002;
+  // 本地版构建时注入完整快照；在线版为空对象，词典全部来自外置 JSON。
   const BUILTIN_DICTIONARY = {
   "Skip to content": "跳到内容",
   "Search": "搜索",
@@ -2151,9 +2151,8 @@
   "You don't have any 批处理 yet": "你还没有任何批处理"
 };
   let EXACT_TEXT = new Map(Object.entries(BUILTIN_DICTIONARY));
-  let currentRevision = BUILTIN_DICTIONARY_REVISION;
-  let dictionarySource = "builtin";
-  let autoUpdate = ONLINE_MODE;
+  let currentRevision = DICTIONARY_REVISION;
+  let dictionarySource = ONLINE_MODE ? "remote" : "builtin";
   let originalPageTitle = null;
   let translatedPageTitle = null;
 
@@ -2163,15 +2162,12 @@
       revision: currentRevision,
       source: dictionarySource,
       entries: EXACT_TEXT.size,
-      autoUpdate,
     };
   }
 
   function loadCachedDictionary() {}
   function setupDictionaryUpdates() {}
   async function refreshDictionary() { return false; }
-  async function importDictionary() { return false; }
-  function setAutoUpdate() { return false; }
 
 
   const originalText = new WeakMap();
@@ -2512,11 +2508,11 @@
     loadCachedDictionary();
     observeRouteChanges();
     const api = {
-      run, translate, refreshDictionary, getDictionaryStatus,
-      importDictionary, setAutoUpdate, version: SCRIPT_VERSION,
+      run, translate, refreshDictionary, getDictionaryStatus, version: SCRIPT_VERSION,
     };
     window.__openrouterChinese = api;
     window.__openrouterChineseRemote = api;
+    if (ONLINE_MODE) void refreshDictionary();
     setupDictionaryUpdates();
     console.info("[" + SCRIPT_NAME + "] OpenRouter 中文化插件已启动");
     const delayStart = () => setTimeout(startTranslation, INITIAL_RUN_DELAY_MS);

@@ -15,10 +15,16 @@ const DICTIONARY_ENTRIES = Object.keys(dictionary).length;
 assert.ok(DICTIONARY_ENTRIES >= 1731, "完整词典不得丢失既有覆盖范围");
 assert.equal(dictionary.schemaVersion, undefined, "the local dictionary must not be an online envelope");
 
+// 本地版版本号 = 词典日期（revision 2026101101 → 26.10.11），与构建脚本保持同一派生规则。
+function legacyDateVersion(revision) {
+  const text = String(revision);
+  return text.slice(2, 4) + "." + text.slice(4, 6) + "." + text.slice(6, 8);
+}
+
 const artifacts = [
   { file: "dist/openrouter-chinese.user.js", version: pkg.version, canonical: true },
   { file: "dist/openrouter-chinese-remote.user.js", version: pkg.version },
-  { file: "legacy/openrouter-chinese.user.js", version: release.legacyVersion, legacy: true },
+  { file: "legacy/openrouter-chinese.user.js", version: legacyDateVersion(release.dictionaryRevision), legacy: true },
 ].map((artifact) => {
   const output = path.join(rootDir, artifact.file);
   assert.equal(existsSync(output), true, `expected ${artifact.file}; run npm run build first`);
@@ -227,12 +233,17 @@ for (const artifact of artifacts) {
   if (artifact.legacy) {
     await api.refreshDictionary(true);
     assert.equal(gmCalls.length, 0, "legacy manual refresh must not call GM APIs");
-  }
-  for (const [sourceText, expected] of translationCases) {
-    assert.equal(translate(sourceText), expected, `${artifact.file}: expected translation for ${sourceText}`);
-  }
-  for (const [sourceText, expected] of Object.entries(dictionary)) {
-    assert.equal(translate(sourceText), expected, `${artifact.file}: built-in entry ${sourceText}`);
+    // 本地版内置完整快照，不联网；在线版词典为空、启动时拉外置 JSON。
+    assert.equal(api.getDictionaryStatus().entries, DICTIONARY_ENTRIES);
+    for (const [sourceText, expected] of translationCases) {
+      assert.equal(translate(sourceText), expected, `${artifact.file}: expected translation for ${sourceText}`);
+    }
+    for (const [sourceText, expected] of Object.entries(dictionary)) {
+      assert.equal(translate(sourceText), expected, `${artifact.file}: built-in entry ${sourceText}`);
+    }
+  } else {
+    // 在线版不内置词典：空词典下敏感文本与正则规则仍生效，词条翻译由外置词典负责。
+    assert.equal(api.getDictionaryStatus().entries, 0);
   }
   for (const text of ["sk-or-v1-ce2...fe3", "isdoge@qq.com", "openai/gpt-5", "https://openrouter.ai/models", "abcdefghijklmnop1234"]) {
     assert.equal(translate(text), text, `${artifact.file}: sensitive text must stay untouched`);
@@ -243,13 +254,12 @@ for (const artifact of artifacts) {
   }
   api.run();
   assert.equal(gmCalls.length, 0, "translation must not call forbidden GM APIs");
-  assert.equal(context.document.title, "护栏 | OpenRouter");
   assert.equal(context.document.documentElement.lang, "zh-CN");
   const { api: homeApi } = loadTranslator(artifact.code, { ...artifact, pathname: "/", title: "OpenRouter" });
   assert.equal(typeof homeApi.run, "function");
 }
 
-console.log(`基础回归通过：${artifacts.length} 类产物，每类 ${DICTIONARY_ENTRIES} 条词典，同一正则引擎，本地备用版无 GM 调用。`);
+console.log(`基础回归通过：${artifacts.length} 类产物，本地版 ${DICTIONARY_ENTRIES} 条内置词典，在线版外置词典，同一正则引擎，本地版无 GM 调用。`);
 
 function loadTranslator(code, overrides = {}) {
   const timers = [];
@@ -297,10 +307,11 @@ function loadTranslator(code, overrides = {}) {
     requestAnimationFrame(callback) {
       callback();
     },
-    GM_getValue: overrides.legacy ? forbiddenGM : (key, defaultValue) => key === "openrouter-zh-auto-update-v1" ? false : defaultValue,
+    GM_getValue: overrides.legacy ? forbiddenGM : (key, defaultValue) => defaultValue,
     GM_setValue: overrides.legacy ? forbiddenGM : () => {},
     GM_registerMenuCommand: overrides.legacy ? forbiddenGM : () => {},
-    GM_xmlhttpRequest: forbiddenGM,
+    // 在线版启动时会拉取外置词典（离线夹具直接失败即可）；本地版不得有任何 GM 网络调用。
+    GM_xmlhttpRequest: overrides.legacy ? forbiddenGM : (options) => options.onerror?.({}),
     setTimeout(callback) { timers.push(callback); return timers.length; },
     setInterval() {},
     URL,
@@ -322,9 +333,9 @@ function loadTranslator(code, overrides = {}) {
   const status = api.getDictionaryStatus();
   assert.equal(status.version, overrides.version);
   assert.equal(status.revision, release.dictionaryRevision);
-  assert.equal(status.entries, DICTIONARY_ENTRIES);
   assert.equal(typeof status.source, "string");
-  assert.equal(status.autoUpdate, false);
+  assert.equal(typeof status.entries, "number");
+  assert.equal(typeof status.autoUpdate, "undefined", "auto update has been removed");
   assert.equal(gmCalls.length, 0, "startup and status must not call forbidden GM APIs");
   return { translate: api.translate, context, api, gmCalls };
 }
