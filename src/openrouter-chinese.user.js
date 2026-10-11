@@ -41,7 +41,25 @@
     "/ori",
     "/discover",
     "/compare",
+    "/sign-in",
+    "/sign-up",
   ];
+  const NON_MODEL_SECTION_PREFIXES = new Set([
+    "blog",
+    "docs",
+    "legal",
+    "pricing",
+    "providers",
+    "collections",
+    "tools",
+    "guides",
+    "api",
+    "labs",
+    "about",
+    "careers",
+    "status",
+    "enterprise",
+  ]);
   const ATTRIBUTES = [
     "aria-label",
     "title",
@@ -102,7 +120,7 @@
     [/^Tools: (\d+) active$/, "工具：$1 个已启用"],
     [/^Show (\d+) more$/, "显示另外 $1 个"],
     [/^Key limit: (\d+)% used of unlimited$/, "密钥限额：已使用 $1%，上限不限"],
-    [/^Set a spend limit on (\d+) keys?$/, "为 $1 个密钥设置消费限额"],
+    [/^Set a spend limit on (\d+) keys?$/, "为 $1 个密钥设置支出限额"],
     [/^Review (\d+) keys? without expiration$/, "复查 $1 个无过期时间的密钥"],
     [/^Actions for (.+)$/, "$1 的操作"],
     [/^Remove (\d+) unused keys?$/, "移除 $1 个闲置密钥"],
@@ -188,7 +206,77 @@
     // Apps 页：榜单名次（分类名同样要过词典）
     [/^Ranked at #(\d+) in (.+) category$/, (match, rank, cat) => `在${translate(cat)}分类中排名第 ${rank}`],
     // 转录页：字符数计价
-    [/^(\$[\d.,]+)\/M characters$/, "$1/百万字符"],
+    [/^(\$[\d.,]+)\/M characters$/, "$1/百万字符"],
+    [/^([\d.,]+[KMGTPB]?) tokens$/, "$1 Token"],
+    [/^([\d.,]+[KMGTPB]?) characters$/, "$1 字符"],
+    [/^([\d.,]+[KMGTPB]?) - ([\d.,]+[KMGTPB]?) tokens$/, "$1 - $2 Token"],
+    [/^\$(.+)\/M characters$/, "$$$1 / 百万字符"],
+    [/^\$(.+)\/second$/, "$$$1 / 秒"],
+    [/^\$(.+)\/question$/, "$$$1 / 题"],
+    [/^Compare AI Models: Pricing, Context & Benchmarks \| OpenRouter$/, "模型对比：定价、上下文与基准测试 | OpenRouter"],
+    [/^AI Model Benchmarks \| OpenRouter$/, "AI 模型基准测试 | OpenRouter"],
+    [/^AI Chat Playground - Compare AI Models Side by Side \| OpenRouter$/, "AI 聊天沙盒 - 并排对比模型 | OpenRouter"],
+    [/^Model Fusion \| OpenRouter$/, "模型融合 | OpenRouter"],
+    [/^Labs - Experimental Features \| OpenRouter$/, "Labs - 实验性功能 | OpenRouter"],
+    [/^Sign In \| OpenRouter$/, "登录 | OpenRouter"],
+    [/^Sign Up \| OpenRouter$/, "注册 | OpenRouter"],
+    [/^(.+) - Top Models & Usage Stats \| OpenRouter$/, "$1 - 模型与用量排行 | OpenRouter"],
+    [/^Coding Agents Rankings \| OpenRouter$/, "编码 Agent 排行榜 | OpenRouter"],
+    [/^Productivity Rankings \| OpenRouter$/, "效率排行榜 | OpenRouter"],
+    [/^Creative Rankings \| OpenRouter$/, "创意排行榜 | OpenRouter"],
+    [/^Entertainment Rankings \| OpenRouter$/, "娱乐排行榜 | OpenRouter"],
+    [/^(.+) Rankings \| OpenRouter$/, "$1 排行榜 | OpenRouter"],
+    [/^(.+) Leaderboard \| OpenRouter$/, "$1 排行榜 | OpenRouter"],
+    [/^by (.+)$/, "由 $1"],
+    [/^(\d+) rooms?$/, "$1 个聊天室"],
+    [/^(\d+) runs?$/, "$1 次运行"],
+    [/^Find a model to pin, (\d+) of 5 pinned$/, "查找要固定的模型，已固定 $1/5"],
+    [/^(\d+)–(\d+) of (\d+)$/, "$1–$2 / $3"],
+    [/^(\d+) of (\d+)$/, "$1 / $2"],
+    [/^Copy: (.+)$/, "复制：$1"],
+    [/^(\d+) selected$/, "已选 $1 个"],
+    [/^Expand (.+) chart$/, "展开 $1 图表"],
+    [/^Answer: (.+)$/, "答案：$1"],
+    [/^(.+) OpenRouter Usage$/, "$1 OpenRouter 用量"],
+    [/^Top models used by (.+) this month$/, "热门模型，来自 $1（本月）"],
+    [/^#(\d+) in (.+)$/, "$2 第 $1 名"],
+    [/^(.+): High to Low$/, "$1：从高到低"],
+    [/^(.+): Low to High$/, "$1：从低到高"],
+    [/^(.+) endpoints that retain data will be disabled\.$/, "$1 中会保留数据的端点将被禁用。"],
+    [/^Top-up platform fee (.+)$/, "充值平台手续费 $1"],
+    [/^(\d+) of (\d+) workspace in use\. Business raises the cap to (.+)\.$/, "$1/$2 个工作区使用中。商业版将上限提升至 $3。"],
+    [/^Key limit: (\d+)% used of (.+)$/, "密钥限额：已使用 $1%，上限 $2"],
+    [/^Settings for (.+)$/, "$1 设置"],
+    [/^Hide (.+)$/, "隐藏 $1"],
+    [/^Show only (.+)$/, "只显示 $1"],
+    [/^(\d+) days? ago$/, "$1 天前"],
+    [/^(\d+) hours? ago$/, "$1 小时前"],
+    [/^(\d+) minutes? ago$/, "$1 分钟前"],
+    [/^(\d+) months? ago$/, "$1 个月前"],
+    [/^(\d+) weeks? ago$/, "$1 周前"],
+    [/^(\d+) years? ago$/, "$1 年前"],
+    [/^(\d+) seconds? ago$/, "$1 秒前"],
+    [/^Workspaces \| OpenRouter$/, "工作区 | OpenRouter"],
+    [/^Manage plan \| OpenRouter$/, "管理套餐 | OpenRouter"],
+    [/^Notifications \| OpenRouter$/, "通知 | OpenRouter"],
+    [/^Account \| OpenRouter$/, "账号 | OpenRouter"],
+    [/^Observability \| OpenRouter$/, "可观测性 | OpenRouter"],
+    [/^Management Keys \| OpenRouter$/, "管理密钥 | OpenRouter"],
+    [/^(.+) \| Workspace \| OpenRouter$/, "$1 | 工作区 | OpenRouter"],
+    [/^More information about (.+)$/, "$1 的更多信息"],
+    [/^Open (.+) details$/, "展开 $1 详情"],
+    [/^\+(\d+) more providers?$/, "+$1 个提供商"],
+    [/^(.+) - API Pricing & Benchmarks \| OpenRouter$/, "$1 - API 定价与基准测试 | OpenRouter"],
+    [/^(P\d+) Latency$/, "$1 延迟"],
+    [/^(P\d+) Router Latency$/, "$1 路由延迟"],
+    [/^(P\d+) Generation Time$/, "$1 生成耗时"],
+    [/^(P\d+) Inter-Token Latency$/, "$1 Token 间延迟"],
+    [/^(P\d+) Total Time to First Token$/, "$1 首 Token 总耗时"],
+    [/^(P\d+) Throughput \(tok\/s\)$/, "$1 吞吐 (tok/s)"],
+    [/^Reorder (.+) column$/, "调整“$1”列顺序"],
+    [/^(\d+) rows?$/, "$1 行"],
+    [/^\+(\d+) categories?$/, "+$1 个分类"],
+    [/^(.+) of all spend$/, "$1 的总支出"],
   ];
 
 
@@ -413,6 +501,7 @@
 
   const originalText = new WeakMap();
   const originalAttrs = new WeakMap();
+  const originalValues = new WeakMap();
   let observer = null;
   let scheduled = false;
   let started = false;
@@ -422,7 +511,20 @@
     if (pathname === "/") {
       return true;
     }
-    return ALLOWED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+    if (ALLOWED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+      return true;
+    }
+    // 模型详情页形如 /<provider>/<model-slug>
+    const parts = pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+    if (
+      parts.length === 2 &&
+      !NON_MODEL_SECTION_PREFIXES.has(parts[0]) &&
+      /^[a-z0-9][a-z0-9._:-]*$/i.test(parts[0]) &&
+      /^[a-z0-9][a-z0-9._:-]*$/i.test(parts[1])
+    ) {
+      return true;
+    }
+    return false;
   }
 
   function translate(source) {
@@ -501,6 +603,25 @@
       state.translated = translate(current);
     } else if (isPlainEnglish(current) && translate(current) !== current) {
       // 当前文本是英文且本身可译：说明它停留在某个规范化（英文值）译项上，按当前文本重新派生。
+      state.source = current;
+      state.translated = translate(current);
+    }
+    return state.source;
+  }
+
+  function getOriginalValue(element) {
+    const current = element.value || "";
+    const state = originalValues.get(element);
+    if (!state) {
+      const nextState = {
+        source: current,
+        translated: translate(current),
+      };
+      originalValues.set(element, nextState);
+      return nextState.source;
+    }
+
+    if (current !== state.translated) {
       state.source = current;
       state.translated = translate(current);
     }
@@ -645,6 +766,23 @@
     return changed;
   }
 
+  // 只读输入框（如日期范围选择器）的 value 不是属性，需要单独翻译
+  function translateReadOnlyValues(root) {
+    let changed = 0;
+    const elements = root.querySelectorAll ? root.querySelectorAll("input, textarea") : [];
+    for (const element of elements) {
+      if (!element.readOnly) {
+        continue;
+      }
+      const next = translate(getOriginalValue(element) || "");
+      if (next && next !== element.value) {
+        element.value = next;
+        changed += 1;
+      }
+    }
+    return changed;
+  }
+
   function run() {
     if (!document.body) {
       return 0;
@@ -666,7 +804,8 @@
       }
       const changed = translateSplitTextElements(document.body)
         + translateTextNodes(document.body)
-        + translateAttributes(document.body);
+        + translateAttributes(document.body)
+        + translateReadOnlyValues(document.body);
       document.documentElement.lang = "zh-CN";
       return changed;
     } finally {
@@ -749,7 +888,7 @@
     loadCachedDictionary();
     observeRouteChanges();
     const api = {
-      run, translate, refreshDictionary, getDictionaryStatus, version: SCRIPT_VERSION,
+      run, translate, refreshDictionary, getDictionaryStatus, isAllowedPath, version: SCRIPT_VERSION,
     };
     window.__openrouterChinese = api;
     window.__openrouterChineseRemote = api;

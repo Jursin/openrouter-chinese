@@ -45,8 +45,10 @@ function compile({ online, version, namespace, output }) {
     .replace(/^\/\/ @updateURL\s+.*$/m, "// @updateURL    " + updateUrl)
     .replace("/v1.0.0/locales/zh-CN.online.json", "/v" + pkg.version + "/locales/zh-CN.online.json");
   if (!online) {
-    source = source.replace(/^\/\/ @(grant|connect)\s+.*\n/gm, "");
-    source = source.replace("// @run-at", "// @grant        none\n// @run-at");
+    // 兼容 CRLF 检出：`.` 不匹配 `\r`，因此显式匹配行尾
+    const eol = source.includes("\r\n") ? "\r\n" : "\n";
+    source = source.replace(/^\/\/ @(grant|connect)[ \t]+[^\r\n]*\r?\n/gm, "");
+    source = source.replace("// @run-at", "// @grant        none" + eol + "// @run-at");
     source = source.replace(/^\/\/ @description\s+.*$/m,
       "// @description  中文化 OpenRouter 界面，本地版内置完整词典，不联网获取词典");
     const start = source.indexOf("  // build:online:start");

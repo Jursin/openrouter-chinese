@@ -31,9 +31,20 @@ for (const line of match[1].split("\n").filter((line) => line.trim())) {
   assert.ok(record, "unrecognized original record: " + line);
   expected.set(JSON.parse(record[1]), JSON.parse(record[2]));
 }
-// 远程词典是原版词典的超集：迁移条目逐一保持原值，仅允许验收中记录在案的修正。
-// "Token" 原值为 "令牌"；按用户要求 token 是专有名词，保持英文，故改为恒等条目。
-const DOCUMENTED_OVERRIDES = new Map([["Token", "Token"]]);
+// 远程词典是原版词典的超集：迁移条目默认保持原值，仅允许下列记录在案的修正。
+// 包括：token 专有名词保留英文，以及本轮合并中按上下文/全站术语统一调整的译法。
+const DOCUMENTED_OVERRIDES = new Map([
+    ["Add credits", "充值额度"],
+    ["Last 7 days", "最近 7 天"],
+    ["Last 30 days", "最近 30 天"],
+    ["Ask anything...", "随便问点什么…"],
+    ["Create Artifact...", "创建产物..."],
+    ["Select artifact type", "选择产物类型"],
+    ["Inactive Models", "未活跃模型"],
+    ["Top models on OpenRouter by Artificial Analysis Intelligence Index", "OpenRouter 上按人工分析智能指数排名的热门模型"],
+    ["Data sourced from Artificial Analysis", "数据来源：人工分析"],
+    ["Longest streak", "最长连续天数"],
+  ]);
 for (const [key, value] of expected) {
   if (DOCUMENTED_OVERRIDES.has(key)) {
     assert.equal(dict[key], DOCUMENTED_OVERRIDES.get(key), `documented override changed: ${key}`);
@@ -450,8 +461,8 @@ for (const artifact of artifacts) {
   for (const safe of ["Amazon Bedrock", "gemini-3-pro", "claude-sonnet-5", "openai/gpt-5", "anthropic/claude-opus-latest"]) {
     assert.equal(translate(safe), safe, `must stay untouched: ${safe}`);
   }
-  assert.equal(translate("Set a spend limit on 1 key"), "为 1 个密钥设置消费限额");
-  assert.equal(translate("Set a spend limit on 12 keys"), "为 12 个密钥设置消费限额");
+  assert.equal(translate("Set a spend limit on 1 key"), "为 1 个密钥设置支出限额");
+  assert.equal(translate("Set a spend limit on 12 keys"), "为 12 个密钥设置支出限额");
   assert.equal(translate("Review 1 key without expiration"), "复查 1 个无过期时间的密钥");
   assert.equal(translate("Review 7 keys without expiration"), "复查 7 个无过期时间的密钥");
   assert.equal(translate("Actions for newkey"), "newkey 的操作");
@@ -464,21 +475,21 @@ for (const artifact of artifacts) {
   assert.equal(translate("sk-or-v1-abc"), "sk-or-v1-abc", "API keys must stay untouched");
   assert.equal(translate("openai/gpt-5"), "openai/gpt-5", "model ids must stay untouched");
   for (const [key, value] of [
-    ["Dashboard", "控制台"],
+    ["Dashboard", "仪表盘"],
     ["Tools", "工具"],
     ["Dismiss", "关闭"],
     ["Security", "安全"],
     ["Switch account", "切换账号"],
     ["Author", "作者"],
-    ["New chat", "新聊天"],
+    ["New chat", "新建聊天"],
     ["Upload", "上传"],
     ["Routers", "路由器"],
     ["Finish Reason", "结束原因"],
     ["Key safety", "密钥安全"],
     ["IP allowlist", "IP 白名单"],
-    ["No spend limit", "无消费限额"],
+    ["No spend limit", "无支出上限"],
     ["View keys", "查看密钥"],
-    ["Never used or idle 90+ days", "90 天以上未使用或闲置"],
+    ["Never used or idle 90+ days", "从未使用或闲置超过 90 天"],
     ["Safe to remove", "可安全移除"],
     ["Recommendations", "建议"],
     ["Enforce a maximum key lifetime", "强制密钥最长有效期"],
